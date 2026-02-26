@@ -53,11 +53,12 @@ The following core classes have no test coverage:
 
 ### 2. Code Quality
 
-#### Replace System.out/err with Logging (3 instances)
-- **Location**: `DefaultBootstrap.java:357, 446`, `DefaultLauncher.java:139`
-- **Issue**: Direct console output without proper logging framework
-- **Impact**: Cannot control log levels or output destinations
-- **Solution**: Introduce SLF4J or java.util.logging
+#### Keep System.out/err for Console Output (No Logging Framework)
+- **Location**: `DefaultBootstrap.java:357, 446`, `DefaultLauncher.java:139`, `DefaultUpdateHandler.java:141`
+- **Decision**: Keep using System.out/System.err for console output
+- **Reason**: Minimizes external dependencies and keeps the library lightweight
+- **Impact**: Users cannot control log levels, but this is intentional for simplicity
+- **Note**: Do NOT introduce SLF4J or other logging frameworks
 
 #### Refactor Unchecked Cast Warnings (7 instances)
 - **Location**: Service.java, UpdateResult.java, UpdateOptions.java, Update.java, DynamicClassLoader.java
@@ -193,7 +194,7 @@ The following core classes have no test coverage:
 ### Phase 1: Critical (Do First)
 1. ✅ Fix existing failing tests (COMPLETED in PR #1)
 2. ✅ Add CI/CD pipelines (COMPLETED in PR #1)
-3. Add tests for zero-coverage classes (DefaultBootstrap, DefaultLauncher, Injectable)
+3. ✅ Add tests for zero-coverage classes (COMPLETED in PR #2)
 4. Improve error messages and exception handling
 
 ### Phase 2: High Priority
