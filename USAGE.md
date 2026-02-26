@@ -139,6 +139,7 @@ java -jar bootstrap.jar --local config.xml --launchFirst
 | `--syncLocal` | Sync remote config to local file |
 | `--cert <path>` | Path to X.509 certificate for signature verification |
 | `--delegate <class>` | Delegate class to handle lifecycle |
+| `--debug` | Enable debug output for troubleshooting |
 
 ---
 
@@ -497,3 +498,41 @@ public boolean shouldCheckForUpdate(FileMetadata file) {
     return !file.getPath().toString().contains("optional");
 }
 ```
+
+---
+
+## Troubleshooting
+
+### Enable Debug Mode
+
+To troubleshoot issues, enable debug mode with the `--debug` flag:
+
+```bash
+java -jar bootstrap.jar --local config.xml --debug
+```
+
+Debug output includes:
+- Configuration loading details
+- File check and download progress
+- Archive installation steps
+- Launch information
+
+Example debug output:
+```
+[DEBUG] Debug mode enabled
+[DEBUG] Loading local configuration from: config.xml
+[DEBUG] Loaded local config with 3 files
+[DEBUG] Checking for updates...
+[DEBUG] Launching application
+```
+
+### Custom Debug Output
+
+You can also add your own debug output in custom UpdateHandler:
+
+```java
+if (DefaultBootstrap.isDebugEnabled()) {
+    System.out.println("[DEBUG] My custom debug info: " + variable);
+}
+```
+
