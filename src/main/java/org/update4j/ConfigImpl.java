@@ -472,10 +472,12 @@ class ConfigImpl {
 
         if (sig != null) {
             if (file.getSignature() == null)
-                throw new SecurityException("Missing signature.");
+                throw new SecurityException("Missing signature for file: " + file.getPath().getFileName() 
+                                + ". The configuration specifies a public key for verification but this file has no signature.");
 
             if (!sig.verify(Base64.getDecoder().decode(file.getSignature())))
-                throw new SecurityException("Signature verification failed.");
+                throw new SecurityException("Signature verification failed for file: " + file.getPath().getFileName() 
+                                + ". The file may have been tampered with or modified after being signed.");
         }
 
         if (file.getPath().toString().endsWith(".jar") && !file.isIgnoreBootConflict()
