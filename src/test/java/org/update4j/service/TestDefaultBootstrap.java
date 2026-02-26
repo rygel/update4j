@@ -300,9 +300,9 @@ public class TestDefaultBootstrap {
     public void testMainWithRemoteOnlyDoesNotThrow() {
         List<String> args = new ArrayList<>();
         args.add("--remote");
-        args.add("http://example.com/config.xml");
+        args.add("file:///path/to/config.xml");
 
-        // Should NOT throw - remote alone is valid
+        // Should NOT throw - remote alone is valid (using file:// scheme)
         assertDoesNotThrow(() -> {
             bootstrap.main(args);
         });
@@ -346,7 +346,7 @@ public class TestDefaultBootstrap {
     public void testMainWithLaunchFirstButNoLocal() {
         List<String> args = new ArrayList<>();
         args.add("--remote");
-        args.add("http://example.com/config.xml");
+        args.add("file:///path/to/config.xml");
         args.add("--launchFirst");
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
@@ -374,7 +374,7 @@ public class TestDefaultBootstrap {
     public void testMainWithSyncLocalButNoLocal() {
         List<String> args = new ArrayList<>();
         args.add("--remote");
-        args.add("http://example.com/config.xml");
+        args.add("file:///path/to/config.xml");
         args.add("--syncLocal");
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
