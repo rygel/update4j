@@ -501,6 +501,117 @@ public boolean shouldCheckForUpdate(FileMetadata file) {
 
 ---
 
+## Updating the Running Application
+
+One of the most challenging tasks in any auto-update system is updating the JAR file that is currently running. Since Java locks JAR files while they're executing, you cannot directly overwrite them.
+
+### The Delegate Pattern
+
+Update4j solves this using a "delegate" pattern where one bootstrap downloads and launches another bootstrap:
+
+```
+bootstrap-v1.jar (running) → downloads bootstrap-v2.jar → launches bootstrap-v2.jar (new process)
+                                                                    ↓
+                                                            bootstrap-v1.jar can now be updated
+```
+
+### Setting Up Delegate Bootstrap
+
+#### 1. Create Your Business Bootstrap
+
+```java
+public class MyBootstrap extends DefaultBootstrap {
+    public static void main(String[] args) {
+        Bootstrap.boot(args);
+    }
+}
+```
+
+#### 2. Configure Delegate in Your Config
+
+```xml
+<configuration>
+    <property name="default.launcher.main.class" value="com.example.MyApp"/>
+    
+    <!-- The bootstrap that will be launched after update -->
+    <property name="default.bootstrap.delegate" value="com.example.MyBootstrap"/>
+    
+    <files>
+        <!-- Your application files -->
+        <file path="myapp.jar" uri="https://example.com/updates/myapp.jar"/>
+        
+        <!-- The bootstrap itself -->
+        <file path="bootstrap.jar" uri="https://example.com/updates/bootstrap-new.jar"/>
+    </files>
+</configuration>
+```
+
+#### 3. Run the Update Process
+
+```java
+// In your running bootstrap
+Configuration config = Configuration.read(Files.newBufferedReader(Paths.get("config.xml")));
+
+// This will:
+// 1. Download all files including new bootstrap
+// 2. Launch the delegate bootstrap (new process)
+// 3. The new process can update the old bootstrap
+config.update();
+config.launch(); // This launches the delegate, not your current bootstrap
+```
+
+### How It Works
+
+1. **Initial Run**: Your current bootstrap runs and checks for updates
+2. **Download**: Downloads new bootstrap JAR to a temporary location
+3. **Launch Delegate**: Launches the new bootstrap in a separate process
+4. **Update Old**: The new bootstrap can now safely update the old JAR files (they're no longer locked)
+5. **Cleanup**: Old bootstrap is removed or renamed
+
+### Example: Complete Setup
+
+```java
+// MyBootstrap.java
+public class MyBootstrap extends DefaultBootstrap {
+    public static void main(String[] args) {
+        Bootstrap.boot(args);
+    }
+}
+
+// config.xml
+/*
+<configuration>
+    <property name="app.name" value="MyApp"/>
+    <property name="default.launcher.main.class" value="com.example.MyApp"/>
+    <property name="default.bootstrap.delegate" value="com.example.MyBootstrap"/>
+    
+    <files>
+        <file path="lib/myapp.jar" uri="myapp.jar"/>
+        <file path="bootstrap.jar" uri="bootstrap.jar"/>
+    </files>
+</configuration>
+*/
+```
+
+### Tips for Success
+
+1. **Use Different Names**: Always download the new bootstrap with a different name, then rename after restart
+2. **Two-Step Update**: Use `updateTemp()` for critical applications, finalize on next startup
+3. **Keep Backups**: Keep old JAR until new one is verified working
+4. **Test Thoroughly**: Test the update flow multiple times before production
+
+### Common Issues
+
+**Problem**: "File is locked" error when trying to update bootstrap
+
+**Solution**: This is expected! Use the delegate pattern so the old bootstrap isn't running when you try to update it.
+
+**Problem**: Delegate bootstrap doesn't start
+
+**Solution**: Check that the delegate JAR is properly configured and all required files are present.
+
+---
+
 ## Troubleshooting
 
 ### Enable Debug Mode
