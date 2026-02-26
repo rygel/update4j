@@ -206,8 +206,8 @@ The following core classes have no test coverage:
 ### Phase 3: Medium Priority
 9. Improve documentation with examples - ✅ IMPLEMENTED
 10. Add delta update functionality - ✅ IMPLEMENTED (checksum-based, only changed files downloaded) - Note: This feature is experimental
-11. Add rollback support
-12. Enhance debug logging - ✅ IMPLEMENTED (--debug flag)
+11. Add rollback support - See GitHub Issue #6
+12. Enhance debug logging - ✅ IMPLEMENTED (--debug flag) - See GitHub Issue #7
 
 ### Phase 4: Low Priority (SKIPPED - maintain JDK 9 compatibility)
 13. Modernization with Java 17+ features (skipped - maintain JDK 9 compatibility)
