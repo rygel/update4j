@@ -61,19 +61,8 @@ public interface Service extends Injectable {
 
             // nothing found, lets load with reflection
             try {
-                Class<?> clazz = classLoader.loadClass(classname);
-
-                if (type.isAssignableFrom(clazz)) {
-
-                    // What do you mean?? look 1 line above
-                    @SuppressWarnings("unchecked")
-                    T value = (T) clazz.getConstructor().newInstance();
-                    return value;
-
-                } else {
-                    // wrong type
-                    throw new IllegalArgumentException(classname + " is not of type " + type.getCanonicalName());
-                }
+                Class<? extends T> clazz = Class.forName(classname, true, classLoader).asSubclass(type);
+                return clazz.getConstructor().newInstance();
             } catch (RuntimeException e) {
                 throw e; // avoid unnecessary wrapping
             } catch (Exception e) {
