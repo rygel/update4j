@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<ruleset name="Default"
+    xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>Update4j PMD Rules</description>
+
+    <!-- Quick rules -->
+    <rule ref="category/java/quickfix.xml/BooleanInstantiation"/>
+    <rule ref="category/java/quickfix.xml/UnnecessaryParentheses"/>
+
+    <!-- Code style rules -->
+    <rule ref="category/java/codestyle.xml/AtLeastOneConstructor"/>
+    <rule ref="category/java/codestyle.xml/LocalVariableCouldBeFinal"/>
+    <rule ref="category/java/codestyle.xml/MethodArgumentCouldBeFinal"/>
+    <rule ref="category/java/codestyle.xml/ShortClassName">
+        <properties>
+            <property name="minLength" value="4"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/codestyle.xml/TooManyStaticImports">
+        <properties>
+            <property name="maximumStaticImports" value="5"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/codestyle.xml/UnnecessaryImport"/>
+    <rule ref="category/java/codestyle.xml/UnnecessaryModifier"/>
+    <rule ref="category/java/codestyle.xml/UnnecessaryThis"/>
+    <rule ref="category/java/codestyle.xml/UseShortArrayInitializer"/>
+    <rule ref="category/java/codestyle.xml/UseUnderscoresInNumericLiterals"/>
+
+    <!-- Documentation rules -->
+    <rule ref="category/java/documentation.xml/CommentRequired"/>
+    <rule ref="category/java/documentation.xml/CommentSize"/>
+
+    <!-- Error prone rules -->
+    <rule ref="category/java/errorprone.xml/AvoidAccessibilityAlteration"/>
+    <rule ref="category/java/errorprone.xml/AvoidAssertAsIdentifier"/>
+    <rule ref="category/java/errorprone.xml/AvoidBranchingStatementAsLastInLoop"/>
+    <rule ref="category/java/errorprone.xml/AvoidCatchingThrowable"/>
+    <rule ref="category/java/errorprone.xml/AvoidDecimalLiteralsInBigDecimalConstructor"/>
+    <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals"/>
+    <rule ref="category/java/errorprone.xml/AvoidEnumAsIdentifier"/>
+    <rule ref="category/java/errorprone.xml/AvoidFieldNameMatchingMethodName"/>
+    <rule ref="category/java/errorprone.xml/AvoidFieldNameMatchingTypeName"/>
+    <rule ref="category/java/errorprone.xml/AvoidInstanceofChecksInCatchClause"/>
+    <rule ref="category/java/errorprone.xml/AvoidLiteralsInIfCondition"/>
+    <rule ref="category/java/errorprone.xml/AvoidLosingExceptionInformation"/>
+    <rule ref="category/java/errorprone.xml/AvoidMultipleUnaryOperators"/>
+    <rule ref="category/java/errorprone.xml/AvoidUsingOctalValues"/>
+    <rule ref="category/java/errorprone.xml/BrokenNullCheck"/>
+    <rule ref="category/java/errorprone.xml/CheckResultSet"/>
+    <rule ref="category/java/errorprone.xml/ClassCastExceptionWithToArray"/>
+    <rule ref="category/java/errorprone.xml/CollapsibleIfStatements"/>
+    <rule ref="category/java/errorprone.xml/DontUseFloatTypeForLoopIndices"/>
+    <rule ref="category/java/errorprone.xml/EmptyCatchBlock"/>
+    <rule ref="category/java/errorprone.xml/EmptyIfStmt"/>
+    <rule ref="category/java/errorprone.xml/EmptyWhileStmt"/>
+    <rule ref="category/java/errorprone.xml/EmptyTryBlock"/>
+    <rule ref="category/java/errorprone.xml/EmptyFinallyBlock"/>
+    <rule ref="category/java/errorprone.xml/EmptySwitchStatements"/>
+    <rule ref="category/java/errorprone.xml/EqualsNull"/>
+    <rule ref="category/java/errorprone.xml/FinalFieldCouldBeStatic"/>
+    <rule ref="category/java/errorprone.xml/IdempotentOperations"/>
+    <rule ref="category/java/errorprone.xml/ImplicitSwitchFallThrough"/>
+    <rule ref="category/java/errorprone.xml/InstantiationToGetClass"/>
+    <rule ref="category/java/errorprone.xml/JUnitSpelling"/>
+    <rule ref="category/java/errorprone.xml/JUnitStaticSuite"/>
+    <rule ref="category/java/errorprone.xml/MisplacedNullCheck"/>
+    <rule ref="category/java/errorprone.xml/MoreThanOneLogger"/>
+    <rule ref="category/java/errorprone.xml/NonStaticInitializer"/>
+    <rule ref="category/java/errorprone.xml/NullAssignment"/>
+    <rule ref="category/java/errorprone.xml/OverrideBothEqualsAndHashcode"/>
+    <rule ref="category/java/errorprone.xml/ProperCloneImplementation"/>
+    <rule ref="category/java/errorprone.xml/ProperLogger"/>
+    <rule ref="category/java/errorprone.xml/ReturnEmptyArrayRatherThanNull"/>
+    <rule ref="category/java/errorprone.xml/ReturnNullFromMethodRatherThanThrow"/>
+    <rule ref="category/java/errorprone.xml/SimpleDateFormatNeedsLocale"/>
+    <rule ref="category/java/errorprone.xml/SingleMethodNamedInnerClass"/>
+    <rule ref="category/java/errorprone.xml/SuspiciousEqualsMethodName"/>
+    <rule ref="category/java/errorprone.xml/SuspiciousHashcodeMethodName"/>
+    <rule ref="category/java/errorprone.xml/SuspiciousOctalEscape"/>
+    <rule ref="category/java/errorprone.xml/UnconditionalIfStatement"/>
+    <rule ref="category/java/errorprone.xml/UnnecessaryBooleanAssertion"/>
+    <rule ref="category/java/errorprone.xml/UnnecessaryConversionTemporary"/>
+    <rule ref="category/java/errorprone.xml/UnusedNullCheckInEquals"/>
+    <rule ref="category/java/errorprone.xml/UseEqualsToCompareStrings"/>
+    <rule ref="category/java/errorprone.xml/UseObjectEquals"/>
+    <rule ref="category/java/errorprone.xml/UselessOperationOnImmutable"/>
+
+    <!-- Performance rules -->
+    <rule ref="category/java/performance.xml/AvoidArrayLoops"/>
+    <rule ref="category/java/performance.xml/AvoidInstantiatingObjectsInLoops"/>
+    <rule ref="category/java/performance.xml/ConsecutiveAppendsShouldReuse"/>
+    <rule ref="category/java/performance.xml/ConsecutiveLiteralAppends"/>
+    <rule ref="category/java/performance.xml/InefficientStringBuffering"/>
+    <rule ref="category/java/performance.xml/OptimizableToArrayCall"/>
+    <rule ref="category/java/performance.xml/RedundantFieldInitializerInConstructor"/>
+    <rule ref="category/java/performance.xml/SimplifyStartsWith"/>
+    <rule ref="category/java/performance.xml/StringInstantiation"/>
+    <rule ref="category/java/performance.xml/StringToString"/>
+    <rule ref="category/java/performance.xml/UnnecessaryWrapperObjectCreation"/>
+    <rule ref="category/java/performance.xml/UseArrayListInsteadOfVector"/>
+    <rule ref="category/java/performance.xml/UseArraysAsList"/>
+    <rule ref="category/java/performance.xml/UseIOStreamsWithApacheCommonsFileReader"/>
+    <rule ref="category/java/performance.xml/UseStringBufferForStringAppends"/>
+
+</ruleset>
