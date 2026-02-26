@@ -303,12 +303,20 @@ public class DefaultBootstrap implements Delegate {
 
     protected Configuration getLocalConfig(boolean ignoreFileNotFound) {
         try (Reader in = Files.newBufferedReader(Paths.get(local))) {
+            Configuration config;
             if (pk == null) {
-                return Configuration.read(in);
+                config = Configuration.read(in);
             } else {
-                return Configuration.read(in, pk);
+                config = Configuration.read(in, pk);
 
             }
+            if (config.getSignature() == null) {
+                System.err.println("WARNING: Loading unsigned configuration from local file. "
+                                + "The configuration has not been signed and cannot be verified. "
+                                + "Consider signing the configuration with a private key and providing "
+                                + "the corresponding public key via --cert for security.");
+            }
+            return config;
         } catch (NoSuchFileException e) {
             if (!ignoreFileNotFound) {
                 e.printStackTrace();
@@ -323,12 +331,20 @@ public class DefaultBootstrap implements Delegate {
 
     protected Configuration getRemoteConfig() {
         try (Reader in = openConnection(new URL(remote))) {
+            Configuration config;
             if (pk == null) {
-                return Configuration.read(in);
+                config = Configuration.read(in);
             } else {
-                return Configuration.read(in, pk);
+                config = Configuration.read(in, pk);
 
             }
+            if (config.getSignature() == null) {
+                System.err.println("WARNING: Loading unsigned configuration from remote URL. "
+                                + "The configuration has not been signed and cannot be verified. "
+                                + "Consider signing the configuration with a private key and providing "
+                                + "the corresponding public key via --cert for security.");
+            }
+            return config;
         } catch (Exception e) {
             e.printStackTrace();
 

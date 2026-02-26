@@ -240,7 +240,9 @@ public class ConfigMapper extends XmlMapper {
 
     public void verifySignature(PublicKey key) {
         if (signature == null) {
-            throw new SecurityException("No signature in configuration root node.");
+            throw new SecurityException("No signature found in configuration root node. "
+                            + "To verify signatures, the configuration must be signed. "
+                            + "Use Configuration.sign(PrivateKey) or the signer() builder method.");
         }
 
         try {
@@ -249,11 +251,13 @@ public class ConfigMapper extends XmlMapper {
             sign.update(getChildrenXml().getBytes(StandardCharsets.UTF_8));
 
             if (!sign.verify(Base64.getDecoder().decode(signature))) {
-                throw new SecurityException("Signature verification failed.");
+                throw new SecurityException("Configuration signature verification failed. "
+                                + "The configuration file may have been tampered with or modified after being signed. "
+                                + "Ensure the configuration was signed with the matching private key.");
             }
 
         } catch (InvalidKeyException | SignatureException e) {
-            throw new SecurityException(e);
+            throw new SecurityException("Signature verification error: " + e.getMessage(), e);
         }
     }
 
