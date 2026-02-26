@@ -9,12 +9,12 @@
   - Handles remote/local config loading
   - Manages update and launch processes
 
-- [ ] Add tests for **DefaultLauncher** (53 lines, 0% coverage)
+- [x] Add tests for **DefaultLauncher** (53 lines, 0% coverage) - 69% coverage
   - Application launcher with main class execution
   - JavaFX application support
   - Command-line argument handling
 
-- [ ] Add tests for **Injectable** (43 lines, 0% coverage)
+- [x] Add tests for **Injectable** (43 lines, 0% coverage) - 100% coverage
   - Dependency injection framework
   - Field exchange between bootstrap and service providers
   - Post-injection callback mechanism
@@ -23,11 +23,11 @@
   - Module add-exports/add-opens configuration
   - JPMS module system integration
 
-- [ ] Add tests for **LaunchContext** (8 lines, 0% coverage)
+- [x] Add tests for **LaunchContext** (8 lines, 0% coverage) - 100% coverage
   - Launch context data structure
   - Configuration and classloader access
 
-- [ ] Add tests for **UnsatisfiedInjectionException** (4 lines, 0% coverage)
+- [x] Add tests for **UnsatisfiedInjectionException** (4 lines, 0% coverage) - 100% coverage
   - Error handling for dependency injection failures
 
 - [ ] Add tests for **MapMapper** (46 lines, 0% coverage)
@@ -161,6 +161,8 @@
 - [x] Add Codecov integration
 - [x] Add tests for DefaultLauncher (11 test cases, 69% coverage)
 - [x] Add tests for LaunchContext (7 test cases, 100% coverage)
+- [x] Add tests for Injectable (17 test cases, 100% coverage)
+- [x] Add tests for UnsatisfiedInjectionException (4 test cases, 100% coverage)
 
 ## Important Notes
 
