@@ -42,7 +42,14 @@ public class TestFull {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("rsa");
         KeyPair pair = kpg.generateKeyPair();
 
-        OS nonCurrent = OS.CURRENT == OS.LINUX ? OS.MAC : OS.WINDOWS;
+        OS nonCurrent;
+        if(OS.CURRENT == OS.LINUX) {
+            nonCurrent = OS.MAC;
+        } else if(OS.CURRENT == OS.WINDOWS) {
+            nonCurrent = OS.MAC;
+        } else {
+            nonCurrent = OS.WINDOWS;
+        }
         Configuration outConfig = Configuration.builder()
                 .baseUri(new File("src/test/resources").toURI())
                 .basePath(targetPath.resolve("output").toAbsolutePath())
