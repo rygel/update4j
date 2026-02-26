@@ -1882,7 +1882,9 @@ public class Configuration {
                     // and have same paths, throw exception
                     boolean pathOverlap = prevFile.getPath().equals(file.getPath());
                     if(osOverlap && archOverlap && pathOverlap) {
-                        throw new IllegalStateException("2 files resolve to same 'path': " + file.getPath());
+                        throw new IllegalStateException("Two files resolve to the same path: " + file.getPath() 
+                                        + ". Each file must have a unique path. If you need OS-specific files, "
+                                        + "use the 'os' attribute to differentiate them.");
                     }
                 }
             }

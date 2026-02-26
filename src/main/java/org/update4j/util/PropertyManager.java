@@ -52,7 +52,8 @@ public class PropertyManager {
                 Property jp = properties.get(j);
 
                 if (ip.getKey().equals(jp.getKey()) && ip.getOs() == jp.getOs()) {
-                    throw new IllegalArgumentException("Duplicate property: " + ip.getKey());
+                    throw new IllegalArgumentException("Duplicate property: " + ip.getKey() 
+                                    + ". Each property key must be unique for a given OS. Remove duplicates to fix.");
                 }
             }
         }
@@ -60,8 +61,9 @@ public class PropertyManager {
         if (systemProperties != null) {
             for (int i = 1; i < systemProperties.size(); i++) {
                 for (int j = 0; j < i; j++) {
-                    if (systemProperties.get(i).equals(systemProperties.get(j)))
-                        throw new IllegalArgumentException("Duplicate system property: " + systemProperties.get(i));
+                if (systemProperties.get(i).equals(systemProperties.get(j)))
+                        throw new IllegalArgumentException("Duplicate system property: " + systemProperties.get(i) 
+                                        + ". Each system property key must be unique in the configuration.");
                 }
             }
         }
@@ -366,7 +368,8 @@ public class PropertyManager {
                 }
 
                 if (!foundSystem) {
-                    throw new IllegalStateException("Cyclic property detected: " + key);
+                    throw new IllegalStateException("Cyclic property detected: " + key 
+                                    + ". Check your property definitions for circular references like ${a} -> ${b} -> ${a}.");
                 }
             }
 
@@ -387,13 +390,15 @@ public class PropertyManager {
         String value = System.getProperty(key, System.getenv(key));
         if (value != null) {
             if (PLACEHOLDER.matcher(value).find()) {
-                throw new IllegalStateException("System properties must not contain placeholders.");
+                throw new IllegalStateException("System properties must not contain placeholders. "
+                                + "Property '" + key + "' contains '${...}' which cannot be resolved from system properties or environment variables.");
             }
 
             return value;
         } else {
             throw new IllegalArgumentException(
-                            "Could not resolve " + (systemInError ? "system " : "") + "property '" + key + "'");
+                            "Could not resolve " + (systemInError ? "system " : "") + "property '" + key + "'. "
+                                            + "Make sure the property is defined in your configuration or set as a system property (-D" + key + "=value) or environment variable.");
         }
     }
 

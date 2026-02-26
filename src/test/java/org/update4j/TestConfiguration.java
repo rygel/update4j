@@ -19,7 +19,7 @@ public class TestConfiguration {
                 .file(FileMetadata.readFrom(new File("src/test/resources/example.txt").toPath().toAbsolutePath()))
                 .file(FileMetadata.readFrom(new File("src/test/resources/example.txt").toPath().toAbsolutePath()))
                 .build());
-        assertTrue(ex.getMessage().startsWith("2 files resolve to same 'path'"));
+        assertTrue(ex.getMessage().startsWith("Two files resolve to the same path"));
 
         // One with OS and one without OS should fail
         ex = assertThrows(IllegalStateException.class, () -> Configuration.builder()
@@ -27,7 +27,7 @@ public class TestConfiguration {
                 .file(FileMetadata.readFrom(new File("src/test/resources/example.txt").toPath().toAbsolutePath()))
                 .file(FileMetadata.readFrom(new File("src/test/resources/example.txt").toPath().toAbsolutePath()).os(OS.LINUX))
                 .build());
-        assertTrue(ex.getMessage().startsWith("2 files resolve to same 'path'"));
+        assertTrue(ex.getMessage().startsWith("Two files resolve to the same path"));
 
         // Two with the same OSs should pass
         ex = assertThrows(IllegalStateException.class, () -> Configuration.builder()
@@ -35,7 +35,7 @@ public class TestConfiguration {
                 .file(FileMetadata.readFrom(new File("src/test/resources/example.txt").toPath().toAbsolutePath()).os(OS.LINUX))
                 .file(FileMetadata.readFrom(new File("src/test/resources/example.txt").toPath().toAbsolutePath()).os(OS.LINUX))
                 .build());
-        assertTrue(ex.getMessage().startsWith("2 files resolve to same 'path'"));
+        assertTrue(ex.getMessage().startsWith("Two files resolve to the same path"));
 
         // Two with different OSs should pass
         assertDoesNotThrow(() -> Configuration.builder()
@@ -50,7 +50,7 @@ public class TestConfiguration {
                 .file(FileMetadata.readFrom(new File("src/test/resources/example.txt").toPath().toAbsolutePath()).os(OS.LINUX))
                 .file(FileMetadata.readFrom(new File("src/test/resources/example.txt").toPath().toAbsolutePath()).os(OS.LINUX).arch("amd64"))
                 .build());
-        assertTrue(ex.getMessage().startsWith("2 files resolve to same 'path'"));
+        assertTrue(ex.getMessage().startsWith("Two files resolve to the same path"));
 
         // One with arch and one without arch for the different OS should pass
         assertDoesNotThrow(() -> Configuration.builder()
@@ -72,7 +72,7 @@ public class TestConfiguration {
                 .file(FileMetadata.readFrom(new File("src/test/resources/example.txt").toPath().toAbsolutePath()).os(OS.LINUX).arch("amd64"))
                 .file(FileMetadata.readFrom(new File("src/test/resources/example.txt").toPath().toAbsolutePath()).os(OS.LINUX).arch("amd64"))
                 .build());
-        assertTrue(ex.getMessage().startsWith("2 files resolve to same 'path'"));
+        assertTrue(ex.getMessage().startsWith("Two files resolve to the same path"));
 
         // Two with the different arch but the same OSs should pass
         assertDoesNotThrow(() -> Configuration.builder()

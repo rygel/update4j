@@ -31,7 +31,9 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PublicKey;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 
@@ -139,7 +141,20 @@ public class DefaultBootstrap implements Delegate {
         if (cert != null) {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             try (InputStream in = Files.newInputStream(Paths.get(cert))) {
-                pk = cf.generateCertificate(in).getPublicKey();
+                java.security.cert.Certificate certChain = cf.generateCertificate(in);
+                
+                if (certChain instanceof X509Certificate) {
+                    X509Certificate x509 = (X509Certificate) certChain;
+                    try {
+                        x509.checkValidity();
+                    } catch (CertificateException e) {
+                        System.err.println("WARNING: Certificate validation failed: " + e.getMessage());
+                        System.err.println("The certificate may be expired or not yet valid. "
+                                        + "Verification will still proceed but may be insecure.");
+                    }
+                }
+                
+                pk = certChain.getPublicKey();
             }
         }
 
