@@ -256,7 +256,20 @@ public class DefaultBootstrap implements Delegate {
             if (isDebugEnabled()) {
                 System.out.println("[DEBUG] Installing archive: " + zip);
             }
-            Archive.read(zip).install();
+            try {
+                Archive.read(zip).install();
+            } catch (Exception e) {
+                if (isDebugEnabled()) {
+                    System.out.println("[DEBUG] Error reading archive: " + e.getMessage());
+                }
+                System.err.println("WARNING: Could not read update archive. "
+                                + "The update may have failed or the archive could be corrupted. "
+                                + "Attempting to launch without applying update.");
+            }
+        } else {
+            if (isDebugEnabled()) {
+                System.out.println("[DEBUG] No archive found - no updates to apply");
+            }
         }
 
         if (success && syncLocal && config == remoteConfig) {
