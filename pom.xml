@@ -34,6 +34,10 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <enforcer.version>3.6.2</enforcer.version>
+        <owasp.version>12.2.0</owasp.version>
+        <versions.maven.version>2.21.0</versions.maven.version>
 	</properties>
 
 	<distributionManagement>
@@ -157,6 +161,42 @@
 					</execution>
 				</executions>
 			</plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>${versions.maven.version}</version>
+                <configuration>
+                    <ignoredVersions>(?i).*-(alpha|beta|m|rc)([-.]?\d+)?</ignoredVersions>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>${owasp.version}</version>
+                <configuration>
+                    <failBuildOnCVSS>7</failBuildOnCVSS> <!-- Fail on High Severity -->
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${enforcer.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-maven</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.9.11</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 		</plugins>
 	</build>
 </project>

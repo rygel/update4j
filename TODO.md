@@ -159,6 +159,8 @@
 - [x] Add JaCoCo code coverage plugin
 - [x] Add test artifacts upload
 - [x] Add Codecov integration
+- [x] Add tests for DefaultLauncher (11 test cases, 69% coverage)
+- [x] Add tests for LaunchContext (7 test cases, 100% coverage)
 
 ## Important Notes
 
