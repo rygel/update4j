@@ -4,7 +4,7 @@
 
 ### Zero Test Coverage Areas
 
-- [ ] Add tests for **DefaultBootstrap** (167 lines, 0% coverage)
+- [x] Add tests for **DefaultBootstrap** (167 lines, 0% coverage) - 48% coverage
   - Main bootstrap logic for application lifecycle
   - Handles remote/local config loading
   - Manages update and launch processes
@@ -19,7 +19,7 @@
   - Field exchange between bootstrap and service providers
   - Post-injection callback mechanism
 
-- [ ] Add tests for **AddPackage** (10 lines, 0% coverage)
+- [x] Add tests for **AddPackage** (10 lines, 0% coverage) - 100% coverage
   - Module add-exports/add-opens configuration
   - JPMS module system integration
 
@@ -30,7 +30,7 @@
 - [x] Add tests for **UnsatisfiedInjectionException** (4 lines, 0% coverage) - 100% coverage
   - Error handling for dependency injection failures
 
-- [ ] Add tests for **MapMapper** (46 lines, 0% coverage)
+- [x] Add tests for **MapMapper** (46 lines, 0% coverage) - 99% coverage
   - Configuration mapping from Map
   - Property resolution
 
@@ -163,6 +163,9 @@
 - [x] Add tests for LaunchContext (7 test cases, 100% coverage)
 - [x] Add tests for Injectable (17 test cases, 100% coverage)
 - [x] Add tests for UnsatisfiedInjectionException (4 test cases, 100% coverage)
+- [x] Add tests for AddPackage (10 test cases, 100% coverage)
+- [x] Add tests for MapMapper (19 test cases, 99% coverage)
+- [x] Add tests for DefaultBootstrap (41 test cases, 48% coverage)
 
 ## Important Notes
 
