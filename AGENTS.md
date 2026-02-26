@@ -204,13 +204,13 @@ The following core classes have no test coverage:
 8. Add integration tests
 
 ### Phase 3: Medium Priority
-9. Improve documentation with examples
+9. Improve documentation with examples - ✅ IMPLEMENTED
 10. Add delta update functionality - ✅ IMPLEMENTED (checksum-based, only changed files downloaded) - Note: This feature is experimental
 11. Add rollback support
 12. Enhance debug logging
 
-### Phase 4: Low Priority
-13. Modernization with Java 17+ features (in future major version, keep JDK 9 min)
+### Phase 4: Low Priority (SKIPPED - maintain JDK 9 compatibility)
+13. Modernization with Java 17+ features (skipped - maintain JDK 9 compatibility)
 14. Additional update strategies
 15. Performance optimizations
 16. Update scheduling
@@ -227,6 +227,268 @@ The following core classes have no test coverage:
 - `ConfigImpl.java` - 2 deprecated methods
 
 These were superseded by the new archive-based update mechanism in v1.5.x but remain available for smooth migration. Remove only in a future major version (2.0+) with clear migration guide.
+
+---
+
+## 📝 Documentation Examples
+
+### 1. Getting Started Guide
+
+#### Basic Configuration and Update
+
+```java
+import org.update4j.*;
+import java.nio.file.*;
+
+public class MyApp {
+    public static void main(String[] args) throws Exception {
+        // Create a configuration programmatically
+        Configuration config = Configuration.builder()
+            .baseUri("https://example.com/updates/")
+            .basePath(Paths.get("lib"))
+            .file(FileMetadata.readFromPath(
+                Paths.get("myapp.jar"),
+                UriType.CLASSpath))
+            .property("app.version", "1.0.0")
+            .build();
+
+        // Check if update is needed
+        if (config.requiresUpdate()) {
+            System.out.println("Update available!");
+            config.update();
+        }
+
+        // Launch the application
+        config.launch();
+    }
+}
+```
+
+#### Using the Default Bootstrap
+
+```java
+// Command line:
+// java -jar mybootstrap.jar --local config.xml
+
+// In config.xml:
+/*
+<configuration>
+    <property name="app.version" value="1.0.0"/>
+    <property name="default.launcher.main.class" value="com.example.MyApp"/>
+    <files>
+        <file path="lib/myapp.jar" 
+              uri="https://example.com/updates/myapp.jar"
+              size="12345"
+              checksum="abc123..."/>
+    </files>
+</configuration>
+*/
+```
+
+### 2. Custom Services
+
+#### Custom UpdateHandler
+
+```java
+import org.update4j.*;
+import org.update4j.service.*;
+
+public class MyUpdateHandler implements UpdateHandler {
+    @Override
+    public void init(UpdateContext context) {
+        System.out.println("Starting update...");
+    }
+
+    @Override
+    public void startCheckUpdates() {
+        System.out.println("Checking for updates...");
+    }
+
+    @Override
+    public void updateCheckUpdatesProgress(float frac) {
+        System.out.printf("Check progress: %.0f%%%n", frac * 100);
+    }
+
+    @Override
+    public void startDownloads() {
+        System.out.println("Starting downloads...");
+    }
+
+    @Override
+    public void updateDownloadProgress(float frac) {
+        System.out.printf("Download progress: %.0f%%%n", frac * 100);
+    }
+
+    @Override
+    public void doneDownloads() {
+        System.out.println("All files downloaded!");
+    }
+
+    @Override
+    public void succeeded() {
+        System.out.println("Update succeeded!");
+    }
+
+    @Override
+    public void failed(Throwable t) {
+        System.err.println("Update failed: " + t.getMessage());
+    }
+
+    @Override
+    public long version() {
+        return 1L; // Higher version = preferred
+    }
+}
+```
+
+Register in `META-INF/services/org.update4j.service.UpdateHandler`:
+```
+com.example.MyUpdateHandler
+```
+
+#### Custom Launcher
+
+```java
+import org.update4j.*;
+import org.update4j.service.*;
+
+public class MyLauncher implements Launcher {
+    @Override
+    public void launch(LaunchContext context) throws Throwable {
+        ClassLoader cl = context.getClassLoader();
+        String mainClass = context.getMainClass();
+        
+        System.out.println("Launching " + mainClass);
+        
+        // Custom launch logic
+        Thread.currentThread().setContextClassLoader(cl);
+        Class<?> clazz = Class.forName(mainClass, true, cl);
+        clazz.getMethod("main", String[].class)
+             .invoke(null, (Object) context.getArgs());
+    }
+
+    @Override
+    public long version() {
+        return 1L;
+    }
+}
+```
+
+### 3. Dependency Injection Examples
+
+#### Using @InjectTarget
+
+```java
+import org.update4j.*;
+import org.update4j.inject.*;
+
+public class MyService implements UpdateHandler, Injectable {
+    
+    @InjectTarget(key = "app.version")
+    private String appVersion;
+    
+    @InjectTarget(key = "server.url")
+    private String serverUrl;
+    
+    @InjectSource
+    private Configuration config;
+    
+    @Override
+    public void injected() {
+        // Called after injection is complete
+        System.out.println("App version: " + appVersion);
+        System.out.println("Server: " + serverUrl);
+    }
+    
+    @Override
+    public void init(UpdateContext context) {
+        // Fields are already injected here
+        System.out.println("Starting update for version " + appVersion);
+    }
+    
+    @Override
+    public long version() {
+        return 1L;
+    }
+}
+```
+
+#### Using Injectable Callbacks
+
+```java
+public class MyHandler implements UpdateHandler, Injectable {
+    
+    @InjectSource
+    private Configuration config;
+    
+    private String customProperty;
+    
+    // Called after @InjectSource and @InjectTarget fields are populated
+    @Override
+    public void injected() {
+        customProperty = config.getProperty("custom.key");
+        System.out.println("Injected! Custom property: " + customProperty);
+    }
+    
+    @Override
+    public void succeeded() {
+        // Use injected values after successful update
+    }
+}
+```
+
+### 4. Security Examples
+
+#### Signing Configuration
+
+```java
+import org.update4j.*;
+import java.security.*;
+
+KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+
+// Sign the configuration
+Configuration signedConfig = Configuration.builder()
+    .baseUri("https://example.com/")
+    .file(FileMetadata.readFromPath(Paths.get("app.jar")))
+    .sign(keyPair.getPrivate())  // Sign with private key
+    .build();
+
+// Write to file
+try (Writer out = Files.newBufferedWriter(Paths.get("config.xml"))) {
+    signedConfig.write(out);
+}
+```
+
+#### Verifying Configuration
+
+```java
+import org.update4j.*;
+
+// Load and verify configuration
+Configuration config = Configuration.read(
+    Files.newBufferedReader(Paths.get("config.xml")),
+    publicKey  // Your trusted public key
+);
+
+// Or verify manually
+config.verifyConfiguration(publicKey);
+```
+
+#### Using Certificate File
+
+```bash
+# Command line with certificate
+java -jar bootstrap.jar --remote https://example.com/config.xml --cert certificate.cer
+```
+
+```java
+// The bootstrap will automatically:
+// 1. Load the X.509 certificate
+// 2. Validate certificate expiry
+// 3. Use public key for signature verification
+// 4. Warn if configuration is unsigned
+```
 
 ---
 

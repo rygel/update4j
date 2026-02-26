@@ -49,6 +49,8 @@ public class DefaultBootstrap implements Delegate {
 
     private static final String OLD_CONFIG = "config.old";
 
+    private static boolean debug;
+
     private String remote;
     private String local;
     private String archivePath = "./update.zip";
@@ -60,6 +62,10 @@ public class DefaultBootstrap implements Delegate {
     private boolean singleInstance;
 
     private PublicKey pk = null;
+
+    public static boolean isDebugEnabled() {
+        return debug;
+    }
 
     @InjectSource(target = "args")
     private List<String> businessArgs;
@@ -197,6 +203,10 @@ public class DefaultBootstrap implements Delegate {
             } else if ("archive".equals(arg)) {
                 ArgUtils.validateHasValue(e);
                 archivePath = e.getValue();
+            } else if ("debug".equals(arg)) {
+                ArgUtils.validateNoValue(e);
+                debug = true;
+                System.out.println("[DEBUG] Debug mode enabled");
             } else if ("delegate".equals(arg)) {
                 throw new IllegalArgumentException("--delegate must be passed as first argument.");
             } else {
@@ -211,34 +221,57 @@ public class DefaultBootstrap implements Delegate {
         Configuration localConfig = null;
 
         if (remote != null) {
+            if (isDebugEnabled()) {
+                System.out.println("[DEBUG] Loading remote configuration from: " + remote);
+            }
             remoteConfig = getRemoteConfig();
         }
 
         if (local != null) {
+            if (isDebugEnabled()) {
+                System.out.println("[DEBUG] Loading local configuration from: " + local);
+            }
             localConfig = getLocalConfig(remoteConfig != null && syncLocal);
         }
 
         if (remoteConfig == null && localConfig == null) {
+            if (isDebugEnabled()) {
+                System.out.println("[DEBUG] No configuration found");
+            }
             return;
         }
 
         Configuration config = remoteConfig != null ? remoteConfig : localConfig;
         Path zip = Paths.get(archivePath);
 
+        if (isDebugEnabled()) {
+            System.out.println("[DEBUG] Checking for updates...");
+        }
+
         boolean success = config.update(UpdateOptions.archive(zip).publicKey(pk)).getException() == null;
         if (!success && stopOnUpdateError)
             return;
 
         if (Files.exists(zip)) {
+            if (isDebugEnabled()) {
+                System.out.println("[DEBUG] Installing archive: " + zip);
+            }
             Archive.read(zip).install();
         }
 
         if (success && syncLocal && config == remoteConfig) {
+            if (isDebugEnabled()) {
+                System.out.println("[DEBUG] Syncing local configuration");
+            }
             syncLocal(remoteConfig);
 
             if (localConfig != null && !localConfig.equals(remoteConfig)) {
                 remoteConfig.deleteOldFiles(localConfig);
             }
+        }
+
+        if (isDebugEnabled()) {
+            System.out.println("[DEBUG] Launching application");
         }
 
         config.launch(this);
@@ -248,6 +281,9 @@ public class DefaultBootstrap implements Delegate {
         Path zip = Paths.get(archivePath);
 
         if (Files.exists(zip)) {
+            if (isDebugEnabled()) {
+                System.out.println("[DEBUG] Found existing archive, checking for pending update");
+            }
             try {
                 Archive archive = Archive.read(zip);
                 Configuration oldConfig = null;
@@ -256,13 +292,23 @@ public class DefaultBootstrap implements Delegate {
                 try (FileSystem fs = archive.openConnection()) {
                     Path oldPath = fs.getPath(OLD_CONFIG);
                     if (Files.exists(oldPath)) {
+                        if (isDebugEnabled()) {
+                            System.out.println("[DEBUG] Found old configuration in archive");
+                        }
                         try (BufferedReader in = Files.newBufferedReader(oldPath)) {
                             oldConfig = Configuration.read(in);
                         }
                     }
                 }
 
+                if (isDebugEnabled()) {
+                    System.out.println("[DEBUG] Installing archive...");
+                }
                 archive.install();
+                
+                if (isDebugEnabled()) {
+                    System.out.println("[DEBUG] Removing old files not in new configuration");
+                }
                 newConfig.deleteOldFiles(oldConfig);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -317,6 +363,9 @@ public class DefaultBootstrap implements Delegate {
     }
 
     protected Configuration getLocalConfig(boolean ignoreFileNotFound) {
+        if (isDebugEnabled()) {
+            System.out.println("[DEBUG] Reading local config from: " + local);
+        }
         try (Reader in = Files.newBufferedReader(Paths.get(local))) {
             Configuration config;
             if (pk == null) {
@@ -331,13 +380,22 @@ public class DefaultBootstrap implements Delegate {
                                 + "Consider signing the configuration with a private key and providing "
                                 + "the corresponding public key via --cert for security.");
             }
+            if (isDebugEnabled()) {
+                System.out.println("[DEBUG] Loaded local config with " + config.getFiles().size() + " files");
+            }
             return config;
         } catch (NoSuchFileException e) {
             if (!ignoreFileNotFound) {
+                if (isDebugEnabled()) {
+                    System.out.println("[DEBUG] Config file not found: " + local);
+                }
                 e.printStackTrace();
             }
         } catch (Exception e) {
             // All exceptions just returns null, never fail
+            if (isDebugEnabled()) {
+                System.out.println("[DEBUG] Error loading config: " + e.getMessage());
+            }
             e.printStackTrace();
         }
 
@@ -345,6 +403,9 @@ public class DefaultBootstrap implements Delegate {
     }
 
     protected Configuration getRemoteConfig() {
+        if (isDebugEnabled()) {
+            System.out.println("[DEBUG] Reading remote config from: " + remote);
+        }
         try (Reader in = openConnection(new URL(remote))) {
             Configuration config;
             if (pk == null) {
@@ -359,8 +420,14 @@ public class DefaultBootstrap implements Delegate {
                                 + "Consider signing the configuration with a private key and providing "
                                 + "the corresponding public key via --cert for security.");
             }
+            if (isDebugEnabled()) {
+                System.out.println("[DEBUG] Loaded remote config with " + config.getFiles().size() + " files");
+            }
             return config;
         } catch (Exception e) {
+            if (isDebugEnabled()) {
+                System.out.println("[DEBUG] Error loading remote config: " + e.getMessage());
+            }
             e.printStackTrace();
 
         }
@@ -471,7 +538,8 @@ public class DefaultBootstrap implements Delegate {
                 + "\t\tand failed.\n\n"
                 + "\t--singleInstance - Run the application as a single instance. Any subsequent attempts\n"
                 + "\t\tto run will just exit. You can better control this feature by directly using the\n"
-                + "\t\tSingleInstanceManager class.\n\n\n"
+                + "\t\tSingleInstanceManager class.\n\n"
+                + "\t--debug - Enable debug output for troubleshooting.\n\n"
                 + "To pass arguments to the business application, separate them with '--' (w/o quotes).";
         
                 System.err.println(output.replace("$version$", Bootstrap.VERSION));
