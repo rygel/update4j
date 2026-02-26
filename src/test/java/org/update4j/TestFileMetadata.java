@@ -6,6 +6,7 @@ import org.update4j.util.FilenameMatch;
 
 import java.io.File;
 import java.net.URI;
+import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,6 +34,6 @@ public class TestFileMetadata {
     }
 
     private FileMetadata.Builder placeholderBuilder() {
-        return FileMetadata.builder().uri(URI.create("http://localhost/placeholder")).path(new File("/tmp/placeholder").toPath());
+        return FileMetadata.builder().uri(URI.create("http://localhost/placeholder")).path(Paths.get("/tmp", "placeholder").toAbsolutePath());
     }
 }
