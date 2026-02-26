@@ -458,26 +458,35 @@ class ConfigImpl {
 
         long actualSize = Files.size(output);
         if (actualSize != file.getSize()) {
-            throw new IllegalStateException("Size of file '" + file.getPath().getFileName()
-                            + "' does not match size in configuration. Expected: " + file.getSize() + ", found: "
-                            + actualSize);
+            throw new IllegalStateException("Size mismatch for file '" + file.getPath().getFileName()
+                            + "'. Expected: " + file.getSize() + " bytes, found: " + actualSize + " bytes. "
+                            + "Possible causes: (1) Download was interrupted or corrupted, "
+                            + "(2) The remote file was updated but your configuration is outdated, "
+                            + "(3) Network issues during download. "
+                            + "Verify the remote file size and regenerate your configuration.");
         }
 
         long actualChecksum = FileUtils.getChecksum(output);
         if (actualChecksum != file.getChecksum()) {
-            throw new IllegalStateException("Checksum of file '" + file.getPath().getFileName()
-                            + "' does not match checksum in configuration. Expected: "
-                            + Long.toHexString(file.getChecksum()) + ", found: " + Long.toHexString(actualChecksum));
+            throw new IllegalStateException("Checksum mismatch for file '" + file.getPath().getFileName()
+                            + "'. Expected: " + Long.toHexString(file.getChecksum()) + ", found: " + Long.toHexString(actualChecksum) + ". "
+                            + "Possible causes: (1) Download was interrupted or corrupted, "
+                            + "(2) The remote file was modified but your configuration is outdated, "
+                            + "(3) File was modified after download. "
+                            + "Verify the remote file checksum (sha256) and regenerate your configuration.");
         }
 
         if (sig != null) {
             if (file.getSignature() == null)
                 throw new SecurityException("Missing signature for file: " + file.getPath().getFileName() 
-                                + ". The configuration specifies a public key for verification but this file has no signature.");
+                                + ". The configuration specifies a public key for verification but this file has no signature. "
+                                + "Either sign the file or remove the public key from the configuration.");
 
             if (!sig.verify(Base64.getDecoder().decode(file.getSignature())))
                 throw new SecurityException("Signature verification failed for file: " + file.getPath().getFileName() 
-                                + ". The file may have been tampered with or modified after being signed.");
+                                + ". The file may have been tampered with or modified after being signed. "
+                                + "Possible causes: (1) Download was corrupted, (2) File was modified, "
+                                + "(3) Using wrong public key. Verify the file integrity and your public key.");
         }
 
         if (file.getPath().toString().endsWith(".jar") && !file.isIgnoreBootConflict()
