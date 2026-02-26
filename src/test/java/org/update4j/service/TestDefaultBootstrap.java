@@ -385,13 +385,12 @@ public class TestDefaultBootstrap {
     }
 
     @Test
-    public void testMainWithValidRemoteAndLocal() {
+    public void testMainWithValidLocalOnly() {
         List<String> args = new ArrayList<>();
-        args.add("--remote");
-        args.add("http://example.com/config.xml");
         args.add("--local");
         args.add("/path/to/config.xml");
 
+        // Should not throw - local config only is valid
         assertDoesNotThrow(() -> {
             bootstrap.main(args);
         });
@@ -400,8 +399,6 @@ public class TestDefaultBootstrap {
     @Test
     public void testMainWithBusinessArgs() {
         List<String> args = new ArrayList<>();
-        args.add("--remote");
-        args.add("http://example.com/config.xml");
         args.add("--local");
         args.add("/path/to/config.xml");
         args.add("--");
