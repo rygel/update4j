@@ -72,13 +72,19 @@ public class DefaultUpdateHandler implements UpdateHandler {
 
     @Override
     public void failed(Throwable t) {
-        clearln();
-        t.printStackTrace(out);
+        if (out != null) {
+            clearln();
+            t.printStackTrace(out);
+        } else {
+            t.printStackTrace();
+        }
     }
 
     @Override
     public void stop() {
-        stopTimer = true;
+        if (timer != null) {
+            stopTimer = true;
+        }
     }
     
     @Override
