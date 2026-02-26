@@ -72,7 +72,9 @@ public interface Service extends Injectable {
         } else {
 
             if (providers.isEmpty()) {
-                throw new IllegalStateException("No provider found for " + type.getCanonicalName());
+                throw new IllegalStateException("No service provider found for " + type.getCanonicalName() 
+                                + ". Make sure the provider class is on the classpath and is registered via " 
+                                + "ServiceLoader (in META-INF/services/) or explicitly provided.");
             }
 
             List<T> values = providers.stream().map(Provider::get).collect(Collectors.toList());
