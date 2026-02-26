@@ -44,7 +44,7 @@
   - Impact: Cannot control log levels or output destinations
   - Solution: Introduce SLF4J or java.util.logging
 
-- [ ] Refactor unchecked cast warnings (7 instances)
+- [ ] Refactor unchecked cast warnings (7 instances) - Known limitation, requires API changes (7 instances)
   - Location: Service.java, UpdateResult.java, UpdateOptions.java, Update.java, DynamicClassLoader.java
   - Issue: Using `@SuppressWarnings("unchecked")` to suppress type safety warnings
   - Impact: Potential runtime ClassCastException risks
@@ -187,9 +187,9 @@
 4. Improve error messages and exception handling
 
 ### Phase 2: High Priority
-5. Replace System.out/err with proper logging framework (NOT NEEDED - keeping System.out for simplicity)
-6. Add security validations and warnings
-7. Refactor unchecked cast warnings
+5. ✅ Replace System.out/err with proper logging framework (NOT NEEDED - keeping System.out for simplicity)
+6. ✅ Improve security validations and warnings (DONE - improved exception messages)
+7. Refactor unchecked cast warnings (Known limitation - would require API changes)
 8. Add integration tests
 
 ### Phase 3: Medium Priority
