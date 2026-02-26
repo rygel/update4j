@@ -178,7 +178,7 @@ The following core classes have no test coverage:
 
 ### Java Compatibility
 - **Minimum JDK**: 9 (maintain for maximum user compatibility)
-- **Tested on**: Java 11, 17, 21 (LTS releases)
+- **Tested on**: Java 11, 17, 21, 25 (LTS releases)
 - **Recommended**: Java 17 LTS for production
 
 ### Codebase Stats
