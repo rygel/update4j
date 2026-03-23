@@ -42,7 +42,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.zip.Adler32;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.zip.ZipFile;
 
 import org.update4j.OS;
@@ -54,21 +55,34 @@ public class FileUtils {
     private FileUtils() {
     }
 
-    public static long getChecksum(Path path) throws IOException {
+    public static String getChecksum(Path path) throws IOException {
         try (InputStream input = Files.newInputStream(path)) {
-            Adler32 checksum = new Adler32();
+            MessageDigest digest;
+            try {
+                digest = MessageDigest.getInstance("SHA-256");
+            } catch (NoSuchAlgorithmException e) {
+                throw new IOException("SHA-256 algorithm not available", e);
+            }
             byte[] buf = new byte[1024 * 8];
 
             int read;
             while ((read = input.read(buf, 0, buf.length)) > -1)
-                checksum.update(buf, 0, read);
+                digest.update(buf, 0, read);
 
-            return checksum.getValue();
+            return bytesToHex(digest.digest());
         }
     }
 
     public static String getChecksumString(Path path) throws IOException {
-        return Long.toHexString(getChecksum(path));
+        return getChecksum(path);
+    }
+
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
     }
 
     public static boolean isJarFile(Path path) throws IOException {
@@ -255,32 +269,40 @@ public class FileUtils {
         }
     }
 
+    private static final int MAX_DELETE_ATTEMPTS = 5;
+
     public static void delayedDelete(Collection<Path> files, int secondsDelay) {
         secondsDelay = Math.max(secondsDelay, 1);
-        List<String> commands = new ArrayList<>();
 
-        String filenames = files.stream()
-                        .map(Path::toString)
-                        .map(f -> "\"" + f.replace("\"", "\\\"") + "\"")
-                        .collect(Collectors.joining(" "));
+        java.util.concurrent.ScheduledExecutorService scheduler =
+                        java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+                            Thread t = new Thread(r, "update4j-delayed-delete");
+                            t.setDaemon(true);
+                            return t;
+                        });
 
-        if (OS.CURRENT == OS.WINDOWS) {
-            commands.addAll(List.of("cmd", "/c"));
-            commands.add("ping localhost -n " + (secondsDelay + 1) + " & del " + filenames);
-        } else {
-            commands.addAll(List.of("sh", "-c"));
-            commands.add("sleep " + secondsDelay + " ; rm " + filenames);
+        for (Path file : files) {
+            scheduler.schedule(() -> retryDelete(file, 1), secondsDelay, java.util.concurrent.TimeUnit.SECONDS);
         }
+    }
 
-        ProcessBuilder pb = new ProcessBuilder(commands);
-
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                pb.start();
-            } catch (IOException e) {
-                e.printStackTrace();
+    private static void retryDelete(Path file, int attempt) {
+        try {
+            Files.deleteIfExists(file);
+        } catch (IOException e) {
+            if (attempt < MAX_DELETE_ATTEMPTS) {
+                // Retry with exponential backoff (2s, 4s, 8s, 16s)
+                long delay = 1L << attempt;
+                java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+                    Thread t = new Thread(r, "update4j-delayed-delete-retry");
+                    t.setDaemon(true);
+                    return t;
+                }).schedule(() -> retryDelete(file, attempt + 1), delay, java.util.concurrent.TimeUnit.SECONDS);
+            } else {
+                System.err.println("WARNING: Failed to delete file after " + MAX_DELETE_ATTEMPTS
+                                + " attempts: " + file);
             }
-        }));
+        }
     }
 
 }

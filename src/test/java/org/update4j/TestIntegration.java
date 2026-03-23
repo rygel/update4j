@@ -83,7 +83,7 @@ public class TestIntegration {
         FileMetadata.Reference ref = FileMetadata.readFrom(testFile);
         
         assertNotNull(ref.getChecksum());
-        assertTrue(ref.getChecksum() != 0);
+        assertFalse(ref.getChecksum().isEmpty());
     }
 
     @Test

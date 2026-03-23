@@ -2,7 +2,6 @@ package org.update4j.mapper;
 
 import java.util.Map;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import java.io.IOException;
@@ -79,7 +78,7 @@ public class MapMapper extends XmlMapper {
 
     public static Map<String, String> read(Reader reader, String name) throws IOException {
         try {
-            Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(reader));
+            Document doc = newSecureDocumentBuilder().parse(new InputSource(reader));
             NodeList list = doc.getChildNodes();
             for (int i = 0; i < list.getLength(); i++) {
                 Node n = list.item(i);

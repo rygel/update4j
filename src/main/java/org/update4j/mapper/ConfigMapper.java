@@ -29,7 +29,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.update4j.OS;
 import org.update4j.Property;
@@ -263,7 +262,7 @@ public class ConfigMapper extends XmlMapper {
 
     public static ConfigMapper read(Reader reader) throws IOException {
         try {
-            Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(reader));
+            Document doc = newSecureDocumentBuilder().parse(new InputSource(reader));
             NodeList list = doc.getChildNodes();
             for (int i = 0; i < list.getLength(); i++) {
                 Node n = list.item(i);

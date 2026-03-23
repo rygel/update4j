@@ -249,6 +249,8 @@ public interface UpdateHandler extends Service {
 
         // Some downloads may fail with HTTP/403, this may solve it
         connection.addRequestProperty("User-Agent", "Mozilla/5.0");
+        // Enable HTTP keep-alive for connection reuse across downloads
+        connection.addRequestProperty("Connection", "keep-alive");
         // Set a connection timeout of 10 seconds
         connection.setConnectTimeout(10 * 1000);
         // Set a read timeout of 10 seconds

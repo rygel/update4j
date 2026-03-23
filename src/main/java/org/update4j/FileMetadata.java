@@ -71,7 +71,7 @@ public class FileMetadata {
     private Path normalizedPath;
     private final OS os;
     private final String arch;
-    private final long checksum;
+    private final String checksum;
     private final long size;
     private final boolean classpath;
     private final boolean modulepath;
@@ -83,7 +83,7 @@ public class FileMetadata {
     private final List<AddPackage> addOpens;
     private final List<String> addReads;
 
-    private FileMetadata(URI uri, Path path, OS os, String arch, long checksum, long size, boolean classpath, boolean modulepath,
+    private FileMetadata(URI uri, Path path, OS os, String arch, String checksum, long size, boolean classpath, boolean modulepath,
                     String comment, boolean ignoreBootConflict, String signature, List<AddPackage> addExports,
                     List<AddPackage> addOpens, List<String> addReads) {
 
@@ -114,9 +114,6 @@ public class FileMetadata {
         this.os = os;
         this.arch = arch;
 
-
-        if (checksum < 0)
-            throw new IllegalArgumentException("Negative checksum: " + checksum);
 
         this.checksum = checksum;
 
@@ -222,15 +219,15 @@ public class FileMetadata {
     }
 
     /**
-     * Returns the Adler32 checksum of this file. Used to check if an update is
-     * needed and to validate the file post-download.
-     * 
+     * Returns the SHA-256 checksum of this file as a lowercase hex string.
+     * Used to check if an update is needed and to validate the file post-download.
+     *
      * <p>
      * This field is only used for updating.
-     * 
-     * @return The Adler32 checksum of this file.
+     *
+     * @return The SHA-256 checksum of this file.
      */
-    public long getChecksum() {
+    public String getChecksum() {
         return checksum;
     }
 
@@ -400,7 +397,7 @@ public class FileMetadata {
             return false;
 
         return Files.notExists(getPath()) || Files.size(getPath()) != getSize()
-                        || FileUtils.getChecksum(getPath()) != getChecksum();
+                        || !FileUtils.getChecksum(getPath()).equals(getChecksum());
     }
 
     public boolean appliesToCurrentPlatform() {
@@ -851,7 +848,7 @@ public class FileMetadata {
             return Files.size(source);
         }
 
-        public long getChecksum() throws IOException {
+        public String getChecksum() throws IOException {
             return FileUtils.getChecksum(source);
         }
 
@@ -907,7 +904,7 @@ public class FileMetadata {
                 mapper.os = getOs();
                 mapper.arch = getArch();
                 mapper.size = getSize();
-                mapper.checksum = Long.toHexString(getChecksum());
+                mapper.checksum = getChecksum();
                 mapper.classpath = isClasspath();
                 mapper.modulepath = isFinalModulepath();
                 mapper.ignoreBootConflict = isIgnoreBootConflict();
@@ -941,7 +938,7 @@ public class FileMetadata {
         private Path path;
         private OS os;
         private String arch;
-        private long checksum;
+        private String checksum;
         private long size;
         private boolean classpath;
         private boolean modulepath;
@@ -995,14 +992,10 @@ public class FileMetadata {
             return this;
         }
 
-        Builder checksum(long checksum) {
+        Builder checksum(String checksum) {
             this.checksum = checksum;
 
             return this;
-        }
-
-        Builder checksum(String checksum) {
-            return checksum(Long.parseLong(checksum, 16));
         }
 
         Builder size(long size) {

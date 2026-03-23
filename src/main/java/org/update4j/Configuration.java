@@ -2025,9 +2025,9 @@ public class Configuration {
 
             FileMapper fileMapper = newMapper.files.get(i);
 
-            long checksum = FileUtils.getChecksum(path);
+            String checksum = FileUtils.getChecksum(path);
             fileMapper.size = Files.size(path);
-            fileMapper.checksum = Long.toString(checksum, 16);
+            fileMapper.checksum = checksum;
 
             if (signer == null) {
                 fileMapper.signature = null;
@@ -2035,7 +2035,7 @@ public class Configuration {
                 fileMapper.signature = Base64.getEncoder().encodeToString(FileUtils.sign(path, signer));
             }
 
-            if (fm.getSize() != fileMapper.size || fm.getChecksum() != checksum) {
+            if (fm.getSize() != fileMapper.size || !checksum.equals(fm.getChecksum())) {
                 logger.log(INFO, "Synced '" + path.getFileName() + "'.");
                 changed = true;
             }
