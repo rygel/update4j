@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
@@ -36,6 +37,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.update4j.Archive;
 import org.update4j.Bootstrap;
@@ -264,7 +266,12 @@ public class DefaultBootstrap implements Delegate {
                 }
                 System.err.println("WARNING: Could not read update archive. "
                                 + "The update may have failed or the archive could be corrupted. "
-                                + "Attempting to launch without applying update.");
+                                + "Deleting corrupt archive so it can be re-downloaded on next run.");
+                try {
+                    Files.deleteIfExists(zip);
+                } catch (IOException deleteEx) {
+                    System.err.println("WARNING: Failed to delete corrupt archive: " + deleteEx.getMessage());
+                }
             }
         } else {
             if (isDebugEnabled()) {
@@ -324,7 +331,14 @@ public class DefaultBootstrap implements Delegate {
                 }
                 newConfig.deleteOldFiles(oldConfig);
             } catch (Exception e) {
+                System.err.println("WARNING: Could not process update archive. "
+                                + "Deleting corrupt archive so it can be re-downloaded.");
                 e.printStackTrace();
+                try {
+                    Files.deleteIfExists(zip);
+                } catch (IOException deleteEx) {
+                    System.err.println("WARNING: Failed to delete corrupt archive: " + deleteEx.getMessage());
+                }
             }
         }
 
@@ -367,12 +381,88 @@ public class DefaultBootstrap implements Delegate {
 
         // Some downloads may fail with HTTP/403, this may solve it
         connection.addRequestProperty("User-Agent", "Mozilla/5.0");
+        // Enable HTTP keep-alive for connection reuse
+        connection.addRequestProperty("Connection", "keep-alive");
         // Set a connection timeout of 10 seconds
         connection.setConnectTimeout(10 * 1000);
         // Set a read timeout of 10 seconds
         connection.setReadTimeout(10 * 1000);
 
+        // Add conditional request headers for HTTP caching
+        if (connection instanceof HttpURLConnection) {
+            Properties cache = loadHttpCache();
+            String etag = cache.getProperty(url.toString() + ".etag");
+            String lastModified = cache.getProperty(url.toString() + ".lastModified");
+            if (etag != null) {
+                connection.setRequestProperty("If-None-Match", etag);
+            }
+            if (lastModified != null) {
+                connection.setRequestProperty("If-Modified-Since", lastModified);
+            }
+
+            HttpURLConnection httpConn = (HttpURLConnection) connection;
+            int responseCode = httpConn.getResponseCode();
+
+            if (responseCode == HttpURLConnection.HTTP_NOT_MODIFIED) {
+                if (isDebugEnabled()) {
+                    System.out.println("[DEBUG] Remote config not modified (HTTP 304)");
+                }
+                return null;
+            }
+
+            // Save cache headers from response
+            String newEtag = httpConn.getHeaderField("ETag");
+            String newLastModified = httpConn.getHeaderField("Last-Modified");
+            if (newEtag != null || newLastModified != null) {
+                if (newEtag != null) {
+                    cache.setProperty(url.toString() + ".etag", newEtag);
+                }
+                if (newLastModified != null) {
+                    cache.setProperty(url.toString() + ".lastModified", newLastModified);
+                }
+                saveHttpCache(cache);
+            }
+        }
+
         return new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8);
+    }
+
+    private Path getHttpCachePath() {
+        if (local != null) {
+            return Paths.get(local + ".http-cache");
+        }
+        return Paths.get(System.getProperty("java.io.tmpdir"), "update4j-http-cache.properties");
+    }
+
+    private Properties loadHttpCache() {
+        Properties props = new Properties();
+        Path cachePath = getHttpCachePath();
+        if (Files.exists(cachePath)) {
+            try (Reader reader = Files.newBufferedReader(cachePath)) {
+                props.load(reader);
+            } catch (IOException e) {
+                if (isDebugEnabled()) {
+                    System.out.println("[DEBUG] Failed to load HTTP cache: " + e.getMessage());
+                }
+            }
+        }
+        return props;
+    }
+
+    private void saveHttpCache(Properties cache) {
+        Path cachePath = getHttpCachePath();
+        try {
+            if (cachePath.getParent() != null) {
+                Files.createDirectories(cachePath.getParent());
+            }
+            try (Writer writer = Files.newBufferedWriter(cachePath)) {
+                cache.store(writer, "update4j HTTP cache");
+            }
+        } catch (IOException e) {
+            if (isDebugEnabled()) {
+                System.out.println("[DEBUG] Failed to save HTTP cache: " + e.getMessage());
+            }
+        }
     }
 
     protected Configuration getLocalConfig(boolean ignoreFileNotFound) {
@@ -420,6 +510,10 @@ public class DefaultBootstrap implements Delegate {
             System.out.println("[DEBUG] Reading remote config from: " + remote);
         }
         try (Reader in = openConnection(new URL(remote))) {
+            if (in == null) {
+                // HTTP 304 Not Modified — fall back to local config
+                return null;
+            }
             Configuration config;
             if (pk == null) {
                 config = Configuration.read(in);

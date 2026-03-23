@@ -95,7 +95,7 @@ public class Archive {
 
             for (FileMetadata file : getFiles()) {
                 Path p = FileUtils.resolve(filesPath, file.getNormalizedPath());
-                if (FileMapper.getChecksum(p) != file.getChecksum()) {
+                if (!FileMapper.getChecksumHex(p).equals(file.getChecksum())) {
                     throw new IOException(p + ": File has been tampered with");
                 }
             }

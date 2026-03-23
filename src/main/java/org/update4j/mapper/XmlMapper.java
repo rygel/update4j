@@ -15,9 +15,32 @@
  */
 package org.update4j.mapper;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.w3c.dom.Node;
 
 public abstract class XmlMapper {
+
+    private static final DocumentBuilderFactory SECURE_DBF;
+
+    static {
+        SECURE_DBF = DocumentBuilderFactory.newInstance();
+        try {
+            SECURE_DBF.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            SECURE_DBF.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            SECURE_DBF.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        } catch (ParserConfigurationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+        SECURE_DBF.setXIncludeAware(false);
+        SECURE_DBF.setExpandEntityReferences(false);
+    }
+
+    static DocumentBuilder newSecureDocumentBuilder() throws ParserConfigurationException {
+        return SECURE_DBF.newDocumentBuilder();
+    }
 
     public abstract void parse(Node node);
 

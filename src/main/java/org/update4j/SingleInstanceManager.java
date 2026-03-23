@@ -175,7 +175,7 @@ public class SingleInstanceManager {
         try {
             tryExecute(args, onNewInstance, lockFileDir);
         } catch (SingleInstanceException e) {
-            System.exit(1);
+            throw new RuntimeException("Another instance is already running", e);
         }
     }
 

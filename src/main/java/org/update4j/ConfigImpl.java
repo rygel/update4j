@@ -132,21 +132,19 @@ class ConfigImpl {
             }
 
             long downloadJobSize = requiresUpdate.stream().mapToLong(FileMetadata::getSize).sum();
-            double downloadJobCompleted = 0;
+            double[] downloadJobCompleted = { 0 };
 
             if (!requiresUpdate.isEmpty()) {
                 if (key == null && config.getSignature() != null) {
-                    Warning.signature();
+                    throw new SecurityException(
+                                    "Configuration is signed but no public key was provided for verification. "
+                                                    + "Provide the corresponding public key or remove the signature from the configuration.");
                 }
-                
+
                 handler.startDownloads();
 
                 for (FileMetadata file : requiresUpdate) {
                     handler.startDownloadFile(file);
-
-                    int read = 0;
-                    double currentCompleted = 0;
-                    byte[] buffer = new byte[1024 * 8];
 
                     Path output;
                     if (!updateTemp) {
@@ -158,37 +156,14 @@ class ConfigImpl {
                     }
                     downloadedCollection.put(file, output);
 
-                    try (InputStream in = handler.openDownloadStream(file);
-                                    OutputStream out = Files.newOutputStream(output)) {
+                    downloadFileWithRetry(file, output, handler, sig, key,
+                                    downloadJobCompleted, downloadJobSize);
 
-                        // We should set download progress only AFTER the request has returned.
-                        // The delay can be monitored by the difference between calls from startDownload to this.
-                        if (downloadJobCompleted == 0) {
-                            handler.updateDownloadProgress(0f);
-                        }
-                        handler.updateDownloadFileProgress(file, 0f);
+                    handler.validatingFile(file, output);
+                    validateFile(file, output, sig);
 
-                        while ((read = in.read(buffer, 0, buffer.length)) > -1) {
-                            out.write(buffer, 0, read);
-
-                            if (sig != null) {
-                                sig.update(buffer, 0, read);
-                            }
-
-                            downloadJobCompleted += read;
-                            currentCompleted += read;
-
-                            handler.updateDownloadFileProgress(file, clamp((float) (currentCompleted / file.getSize())));
-                            handler.updateDownloadProgress(clamp((float) downloadJobCompleted / downloadJobSize));
-                        }
-
-                        handler.validatingFile(file, output);
-                        validateFile(file, output, sig);
-
-                        updated.add(file);
-                        handler.doneDownloadFile(file, output);
-
-                    }
+                    updated.add(file);
+                    handler.doneDownloadFile(file, output);
                 }
 
                 completeDownloads(downloadedCollection, tempDir, updateTemp);
@@ -302,13 +277,15 @@ class ConfigImpl {
             }
 
             long downloadJobSize = requiresUpdate.stream().mapToLong(FileMetadata::getSize).sum();
-            double downloadJobCompleted = 0;
+            double[] downloadJobCompleted = { 0 };
 
             if (!requiresUpdate.isEmpty()) {
                 if (key == null && config.getSignature() != null) {
-                    Warning.signature();
+                    throw new SecurityException(
+                                    "Configuration is signed but no public key was provided for verification. "
+                                                    + "Provide the corresponding public key or remove the signature from the configuration.");
                 }
-                
+
                 Archive archive = new Archive(options.getArchiveLocation());
                 try (FileSystem zip = archive.openConnection()) {
 
@@ -318,7 +295,7 @@ class ConfigImpl {
                     try (BufferedWriter out = Files.newBufferedWriter(configPath)) {
                         config.write(out);
                     }
-                    
+
                     // Save dynamic properties, if any. #110
                     if(!config.getDynamicProperties().isEmpty()) {
                         Path dynamicPath = zip.getPath(Archive.RESERVED_DIR,  Archive.DYNAMIC_PATH);
@@ -326,7 +303,6 @@ class ConfigImpl {
                             MapMapper.write(out, config.getDynamicProperties(), Archive.DYNAMIC_NODE);
                         }
                     }
-                    
 
                     handler.startDownloads();
                     for (FileMetadata file : requiresUpdate) {
@@ -335,35 +311,8 @@ class ConfigImpl {
                         Path output = FileUtils.resolve(zip.getPath(Archive.FILES_DIR), file.getNormalizedPath());
                         Files.createDirectories(output.getParent());
 
-                        int read = 0;
-                        double currentCompleted = 0;
-                        byte[] buffer = new byte[1024 * 8];
-
-                        try (InputStream in = handler.openDownloadStream(file);
-                                        OutputStream out = Files.newOutputStream(output)) {
-
-                            // We should set download progress only AFTER the request has returned.
-                            // The delay can be monitored by the difference between calls from startDownload to this.
-                            if (downloadJobCompleted == 0) {
-                                handler.updateDownloadProgress(0f);
-                            }
-                            handler.updateDownloadFileProgress(file, 0f);
-
-                            while ((read = in.read(buffer, 0, buffer.length)) > -1) {
-                                out.write(buffer, 0, read);
-
-                                if (sig != null) {
-                                    sig.update(buffer, 0, read);
-                                }
-
-                                downloadJobCompleted += read;
-                                currentCompleted += read;
-
-                                handler.updateDownloadFileProgress(file, clamp((float) (currentCompleted / file.getSize())));
-                                handler.updateDownloadProgress(clamp((float) downloadJobCompleted / downloadJobSize));
-                            }
-
-                        }
+                        downloadFileWithRetry(file, output, handler, sig, key,
+                                        downloadJobCompleted, downloadJobSize);
 
                         handler.validatingFile(file, output);
                         validateFile(file, output, sig);
@@ -466,10 +415,10 @@ class ConfigImpl {
                             + "Verify the remote file size and regenerate your configuration.");
         }
 
-        long actualChecksum = FileUtils.getChecksum(output);
-        if (actualChecksum != file.getChecksum()) {
+        String actualChecksum = FileUtils.getChecksum(output);
+        if (!actualChecksum.equals(file.getChecksum())) {
             throw new IllegalStateException("Checksum mismatch for file '" + file.getPath().getFileName()
-                            + "'. Expected: " + Long.toHexString(file.getChecksum()) + ", found: " + Long.toHexString(actualChecksum) + ". "
+                            + "'. Expected: " + file.getChecksum() + ", found: " + actualChecksum + ". "
                             + "Possible causes: (1) Download was interrupted or corrupted, "
                             + "(2) The remote file was modified but your configuration is outdated, "
                             + "(3) File was modified after download. "
@@ -721,12 +670,83 @@ class ConfigImpl {
             try {
                 t.join();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
             }
         }
     }
     
+    private static final int MAX_DOWNLOAD_ATTEMPTS = 3;
+    private static final long[] RETRY_DELAYS_MS = { 1000, 2000 };
+
+    static void downloadFileWithRetry(FileMetadata file, Path output, UpdateHandler handler,
+                    Signature sig, PublicKey key, double[] downloadJobCompleted, long downloadJobSize)
+                    throws Throwable {
+
+        IOException lastException = null;
+
+        for (int attempt = 0; attempt < MAX_DOWNLOAD_ATTEMPTS; attempt++) {
+            if (attempt > 0) {
+                // Reset output file for retry
+                Files.deleteIfExists(output);
+                Files.createFile(output);
+
+                // Reset signature state for this file
+                if (sig != null) {
+                    sig.initVerify(key);
+                }
+
+                // Reset per-file progress (keep cumulative at previous file boundary)
+                handler.updateDownloadFileProgress(file, 0f);
+
+                try {
+                    Thread.sleep(RETRY_DELAYS_MS[attempt - 1]);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Download interrupted during retry backoff", e);
+                }
+            }
+
+            try (InputStream in = handler.openDownloadStream(file);
+                            OutputStream out = Files.newOutputStream(output)) {
+
+                if (downloadJobCompleted[0] == 0 && attempt == 0) {
+                    handler.updateDownloadProgress(0f);
+                }
+                handler.updateDownloadFileProgress(file, 0f);
+
+                int read;
+                double currentCompleted = 0;
+                byte[] buffer = new byte[1024 * 8];
+                double startJobCompleted = downloadJobCompleted[0];
+
+                while ((read = in.read(buffer, 0, buffer.length)) > -1) {
+                    out.write(buffer, 0, read);
+
+                    if (sig != null) {
+                        sig.update(buffer, 0, read);
+                    }
+
+                    currentCompleted += read;
+                    downloadJobCompleted[0] = startJobCompleted + currentCompleted;
+
+                    handler.updateDownloadFileProgress(file, clamp((float) (currentCompleted / file.getSize())));
+                    handler.updateDownloadProgress(clamp((float) downloadJobCompleted[0] / downloadJobSize));
+                }
+
+                // Download succeeded
+                return;
+            } catch (IOException e) {
+                lastException = e;
+                // Reset cumulative progress for this file on failure
+            }
+        }
+
+        throw lastException;
+    }
+
     private static float clamp(float val) {
         return Math.max(0,  Math.min(1, val));
     }
-    
+
 }
