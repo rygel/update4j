@@ -26,21 +26,11 @@ jobs:
           distribution: 'temurin'
           cache: maven
       
-      - name: Set Maven flags
-        id: mvn-flags
-        shell: bash
-        run: |
-          if [[ "${{ matrix.java }}" == "11" || "${{ matrix.java }}" == "17" ]]; then
-            echo "extra=-Dcheckstyle.skip -Dpmd.skip" >> "$GITHUB_OUTPUT"
-          else
-            echo "extra=" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Build
-        run: mvn --batch-mode -DskipTests package ${{ steps.mvn-flags.outputs.extra }}
+        run: mvn --batch-mode -DskipTests package
 
       - name: Test
-        run: mvn --batch-mode test ${{ steps.mvn-flags.outputs.extra }}
+        run: mvn --batch-mode test
       
       - name: Upload test results
         if: always()
